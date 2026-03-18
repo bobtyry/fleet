@@ -38,10 +38,11 @@ Te = 0.01
 simulation = Simulation.FleetSimulation(fleet, t0=0.0, tf=20.0, dt=Te)
 
 # control gain for consensus
-kp = 0.4 #  **** A MODIFIER EN TP ****
-
-u = np.zeros((2, 1))
-
+kp = 0.5 #  **** A MODIFIER EN TP ****
+kr = 0.1
+reference = np.array([[5], [5]])
+safe_distance = 2
+kr_avoid = 1.0
 # main loop of simulation
 for t in simulation.t:
 
@@ -54,7 +55,21 @@ for t in simulation.t:
     for r in range(0, fleet.nbOfRobots):
         fleet.robot[r].ctrl = np.zeros((2,1))
         for n in range(0, fleet.nbOfRobots):
-            fleet.robot[r].ctrl += kp* (fleet.robot[n].state - fleet.robot[r].state) / fleet.nbOfRobots
+            if n != r:
+                d = np.linalg.norm(fleet.robot[n].state - fleet.robot[r].state)
+
+                # consensus si assez loin
+                if d > 3:
+                    fleet.robot[r].ctrl += kp * (fleet.robot[n].state - fleet.robot[r].state) / fleet.nbOfRobots
+
+                # répulsion si trop proche
+                if d < safe_distance:
+                    direction = fleet.robot[r].state - fleet.robot[n].state
+                    fleet.robot[r].ctrl += kr_avoid * direction / (d + 1e-6)
+    
+
+        
+        fleet.robot[r].ctrl += kr * (reference - fleet.robot[r].state)
 
 		
         
