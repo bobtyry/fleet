@@ -38,26 +38,24 @@ Te = 0.01
 simulation = Simulation.FleetSimulation(fleet, t0=0.0, tf=20.0, dt=Te)
 
 # control gain for consensus
-kp = 1.0 #  **** A MODIFIER EN TP ****
+kp = 0.4 #  **** A MODIFIER EN TP ****
 
 u = np.zeros((2, 1))
 
 # main loop of simulation
 for t in simulation.t:
 
-	# computation for each robot of the fleet
-    for i in range(0, fleet.nbOfRobots):
-        
-        
-        for j in range(0, fleet.nbOfRobots):
-        
-            if communicationGraph.adjacencyMatrix[i, j] != 0 and j != i:
-            
-                u += (fleet.robot[j].state - fleet.robot[i].state)
+#        #proportional control law to common reference state
+#        referenceState= np.array([[2.] , [1.] ])
+#        for r in range(0, fleet.nbOfRobots):
+#            fleet.robot[r].ctrl = kp* (referenceState - fleet.robot[r].state)
 
-    
-		# control input of robot i
-        fleet.robot[i].ctrl = kp * u  #  **** A COMPLETER EN TP **** #
+    # consensus
+    for r in range(0, fleet.nbOfRobots):
+        fleet.robot[r].ctrl = np.zeros((2,1))
+        for n in range(0, fleet.nbOfRobots):
+            fleet.robot[r].ctrl += kp* (fleet.robot[n].state - fleet.robot[r].state) / fleet.nbOfRobots
+
 		
         
     # store simulation data
@@ -67,6 +65,6 @@ for t in simulation.t:
 
 # plot
 plt.close('all')
-simulation.plot()
-#simulation.plotFleet()
+simulation.plot(figNo=4)
+simulation.plotFleet(figNo=4, mod=200)
 
