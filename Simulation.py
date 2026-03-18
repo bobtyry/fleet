@@ -139,10 +139,22 @@ class FleetSimulation:
         
         fig1 = plt.figure(figNo)
         graph = fig1.add_subplot(111, aspect='equal', autoscale_on=False, xlim=(xmin, xmax), ylim=(ymin, ymax))
-#            graph.plot(self.state[0,:], self.state[1,:], color = 'r')
-#            graph.plot(self.state[0,-1], self.state[1,-1], color = 'r', marker='o')
+        for i in range(self.nbOfRobots):
+
+            x = self.robotSimulation[i].state[0, :]
+            y = self.robotSimulation[i].state[1, :]
+
+        # Trajectoire
+        graph.plot(x, y)
+
+        # Point de départ
+        graph.plot(x[0], y[0], marker='o', color='green', markersize=10)
+
+        # Point d'arrivée
+        graph.plot(x[-1], y[-1], marker='o', color='red', markersize=10)
         
         #print int(self.t.shape[0])
+        
 
         plt.gca().set_prop_cycle(None)        
         
@@ -160,6 +172,7 @@ class FleetSimulation:
         graph.grid(True)
         graph.set_xlabel('x (m)')
         graph.set_ylabel('y (m)')
+        plt.show()
             
     
    

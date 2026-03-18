@@ -66,7 +66,7 @@ for t in simulation.t:
     fleet.integrateMotion(Te)
 
 # plot
-
-simulation.plot(figNo=4, mod=10)
-simulation.plotFleet(figNo=5, mod=200)
+plt.close('all')
+simulation.plot()
+#simulation.plotFleet()
 
