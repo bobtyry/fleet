@@ -38,11 +38,19 @@ Te = 0.01
 simulation = Simulation.FleetSimulation(fleet, t0=0.0, tf=20.0, dt=Te)
 
 # control gain for consensus
-kp = 0.5 #  **** A MODIFIER EN TP ****
-kr = 0.1
-reference = np.array([[5], [5]])
+kp = 0.3 #  **** A MODIFIER EN TP ****
+kr = 0.7
+reference = np.array([[8], [8]])
 safe_distance = 2
 kr_avoid = 1.0
+
+#animation
+plt.ion()  # mode interactif
+fig = plt.figure()
+ax = fig.add_subplot(111, aspect='equal')
+ax.set_xlim(-10, 10)
+ax.set_ylim(-10, 10)
+
 # main loop of simulation
 for t in simulation.t:
 
@@ -70,16 +78,33 @@ for t in simulation.t:
 
         
         fleet.robot[r].ctrl += kr * (reference - fleet.robot[r].state)
-
-		
         
     # store simulation data
     simulation.addDataFromFleet(fleet)
     # integrat motion over sampling period
     fleet.integrateMotion(Te)
+        
+    # --- ANIMATION ---     
+    ax.clear()
+    ax.set_xlim(-10, 10)
+    ax.set_ylim(-10, 10)
+
+    for i in range(nbOfRobots):
+        x = fleet.robot[i].state[0]
+        y = fleet.robot[i].state[1]
+        ax.plot(x, y, 'o', markersize=10)
+    
+    fig.canvas.draw()          # <<< indispensable dans Spyder
+    fig.canvas.flush_events()  # <<< indispensable dans Spyder
+
+
+
+		
+        
+   
 
 # plot
-plt.close('all')
-simulation.plot(figNo=4)
-simulation.plotFleet(figNo=4, mod=200)
+# plt.close('all')
+# simulation.plot(figNo=4)
+# simulation.plotFleet(figNo=4, mod=200)
 
