@@ -37,12 +37,14 @@ for i in range(0, nbOfRobots):
 # communication graph
 communicationGraph = Graph.Graph(nbOfRobots)
 # adjacency matrix
-communicationGraph.adjacencyMatrix = np.array([[1, 0, 0, 0, 0, 0],
-                                               [0, 1, 0, 0, 0, 0],
-                                               [0, 0, 1, 0, 0, 0],
-                                               [0, 0, 0, 1, 0, 0],
-                                               [0, 0, 0, 0, 1, 0],
-                                               [0, 0, 0, 0, 0, 1]])
+communicationGraph.adjacencyMatrix = np.ones((6,6))
+
+# np.array([[1, 0, 0, 0, 0, 0],
+#                                                [0, 1, 0, 0, 0, 0],
+#                                                [0, 0, 1, 0, 0, 0],
+#                                                [0, 0, 0, 1, 0, 0],
+#                                                [0, 0, 0, 0, 1, 0],
+#                                                [0, 0, 0, 0, 0, 1]])
 
 # plot communication graph
 communicationGraph.plot(figNo=1)
@@ -55,7 +57,7 @@ simulation = Simulation.FleetSimulation(fleet, t0=0.0, tf=20.0, dt=Te)
 # control gain for consensus
 kp = 0.3 #  **** A MODIFIER EN TP ****
 kr = 0.2
-reference = np.array([[8], [8]])
+reference = np.array([[8.0], [8.0]])
 safe_distance = 2
 kr_avoid = 1.0
 
@@ -79,8 +81,11 @@ for t in simulation.t:
 #        for r in range(0, fleet.nbOfRobots):
 #            fleet.robot[r].ctrl = kp* (referenceState - fleet.robot[r].state)
 
-    # consensus
-    for r in range(0, fleet.nbOfRobots):
+#
+    print(type(fleet.robot[0].state))    
+    fleet.robot[0].ctrl += kr * (reference - fleet.robot[0].state)
+    
+    for r in range(1, fleet.nbOfRobots):
         fleet.robot[r].ctrl = np.zeros((2,1))
         for n in range(0, fleet.nbOfRobots):
             if n != r and (communicationGraph.adjacencyMatrix[n,r]==1):
@@ -98,7 +103,7 @@ for t in simulation.t:
     
 
         
-        fleet.robot[r].ctrl += kr * (reference - fleet.robot[r].state)
+        fleet.robot[r].ctrl += kr * (fleet.robot[0] - fleet.robot[r].state)
         
     # store simulation data
     simulation.addDataFromFleet(fleet)
