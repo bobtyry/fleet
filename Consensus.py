@@ -13,6 +13,16 @@ import Simulation
 import matplotlib.pyplot as plt
 
 
+stop_simulation = False
+
+def on_key(event):
+    global stop_simulation
+    if event.key == 'p':
+        stop_simulation = True
+
+
+
+
 
 # fleet definition
 nbOfRobots = 6  
@@ -27,7 +37,12 @@ for i in range(0, nbOfRobots):
 # communication graph
 communicationGraph = Graph.Graph(nbOfRobots)
 # adjacency matrix
-communicationGraph.adjacencyMatrix = np.ones((nbOfRobots,nbOfRobots))
+communicationGraph.adjacencyMatrix = np.array([[1, 0, 0, 0, 0, 0],
+                                               [0, 1, 0, 0, 0, 0],
+                                               [0, 0, 1, 0, 0, 0],
+                                               [0, 0, 0, 1, 0, 0],
+                                               [0, 0, 0, 0, 1, 0],
+                                               [0, 0, 0, 0, 0, 1]])
 
 # plot communication graph
 communicationGraph.plot(figNo=1)
@@ -39,7 +54,7 @@ simulation = Simulation.FleetSimulation(fleet, t0=0.0, tf=20.0, dt=Te)
 
 # control gain for consensus
 kp = 0.3 #  **** A MODIFIER EN TP ****
-kr = 0.7
+kr = 0.2
 reference = np.array([[8], [8]])
 safe_distance = 2
 kr_avoid = 1.0
@@ -53,6 +68,11 @@ ax.set_ylim(-10, 10)
 
 # main loop of simulation
 for t in simulation.t:
+    
+    if stop_simulation:
+        print("Simulation arrêtée par l'utilisateur.")
+        break
+
 
 #        #proportional control law to common reference state
 #        referenceState= np.array([[2.] , [1.] ])
@@ -63,7 +83,8 @@ for t in simulation.t:
     for r in range(0, fleet.nbOfRobots):
         fleet.robot[r].ctrl = np.zeros((2,1))
         for n in range(0, fleet.nbOfRobots):
-            if n != r:
+            if n != r and (communicationGraph.adjacencyMatrix[n,r]==1):
+                
                 d = np.linalg.norm(fleet.robot[n].state - fleet.robot[r].state)
 
                 # consensus si assez loin
@@ -96,6 +117,7 @@ for t in simulation.t:
     
     fig.canvas.draw()          # <<< indispensable dans Spyder
     fig.canvas.flush_events()  # <<< indispensable dans Spyder
+    fig.canvas.mpl_connect('key_press_event', on_key)
 
 
 
