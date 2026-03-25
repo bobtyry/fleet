@@ -60,6 +60,7 @@ kr = 0.2
 reference = np.array([[8.0], [8.0]])
 safe_distance = 2
 kr_avoid = 1.0
+marge = 0.5
 
 #animation
 plt.ion()  # mode interactif
@@ -68,6 +69,17 @@ ax = fig.add_subplot(111, aspect='equal')
 ax.set_xlim(-10, 10)
 ax.set_ylim(-10, 10)
 
+#flag
+etape_1 = True
+etape_2 = False
+Etape_f = False
+
+#consigne
+consigne = []
+check = 0
+for i in range(nbOfRobots-1):
+    consigne.append(False)
+
 # main loop of simulation
 for t in simulation.t:
     
@@ -75,36 +87,46 @@ for t in simulation.t:
         print("Simulation arrêtée par l'utilisateur.")
         break
 
-
-#        #proportional control law to common reference state
-#        referenceState= np.array([[2.] , [1.] ])
-#        for r in range(0, fleet.nbOfRobots):
-#            fleet.robot[r].ctrl = kp* (referenceState - fleet.robot[r].state)
-
-#
-    print(type(fleet.robot[0].state))    
-    fleet.robot[0].ctrl += kr * (reference - fleet.robot[0].state)
-    
-    for r in range(1, fleet.nbOfRobots):
-        fleet.robot[r].ctrl = np.zeros((2,1))
-        for n in range(0, fleet.nbOfRobots):
-            if n != r and (communicationGraph.adjacencyMatrix[n,r]==1):
-                
-                d = np.linalg.norm(fleet.robot[n].state - fleet.robot[r].state)
-
-                # consensus si assez loin
-                if d > 3:
-                    fleet.robot[r].ctrl += kp * (fleet.robot[n].state - fleet.robot[r].state) / fleet.nbOfRobots
-
-                # répulsion si trop proche
-                if d < safe_distance:
-                    direction = fleet.robot[r].state - fleet.robot[n].state
-                    fleet.robot[r].ctrl += kr_avoid * direction / (d + 1e-6)
-    
-
+    if etape_1:
         
-        fleet.robot[r].ctrl += kr * (fleet.robot[0] - fleet.robot[r].state)
+        for r in range(1, fleet.nbOfRobots):
+            fleet.robot[r].ctrl = np.zeros((2,1))
+            for n in range(0, fleet.nbOfRobots):
+                if n != r and (communicationGraph.adjacencyMatrix[n,r]==1):
+                    
+                    d = np.linalg.norm(fleet.robot[n].state - fleet.robot[r].state)
+
+                    # consensus si assez loin
+                    if d > 3:
+                        fleet.robot[r].ctrl += kp * (fleet.robot[n].state - fleet.robot[r].state) / fleet.nbOfRobots
+
+                    # répulsion si trop proche
+                    if d < safe_distance:
+                        direction = fleet.robot[r].state - fleet.robot[n].state
+                        fleet.robot[r].ctrl += kr_avoid * direction / (d + 1e-6)
         
+            
+            
+            fleet.robot[r].ctrl += kr * (fleet.robot[0].state - fleet.robot[r].state)
+            if (np.linalg.norm(fleet.robot[0].state - fleet.robot[r].state))<safe_distance + marge:
+                consigne[r-1] = True
+            check= 0
+            for i in consigne:
+                if i:
+                    check = check + 1
+            if check == 5:
+                etape_1 = False
+                etape_2 = True
+            
+    if etape_2:
+        
+        fleet.robot[0].ctrl = np.zeros((2,1))
+        fleet.robot[0].ctrl += kr * (reference - fleet.robot[0].state)    
+        
+        for r in range(1, fleet.nbOfRobots):
+            fleet.robot[r].ctrl = fleet.robot[0].ctrl
+            
+
     # store simulation data
     simulation.addDataFromFleet(fleet)
     # integrat motion over sampling period
