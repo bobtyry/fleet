@@ -183,31 +183,31 @@ class FleetSimulation:
 if __name__=='__main__':
 # =============================================================================
     
-## ---- one robot simulation test
-#    
-#    initState = np.array([ [-1.], [2.] ])
-#    robot = Robot.Robot(dynamics='singleIntegrator2D', initState=initState, index=0)    
-#    
-#    Te = 0.01
-#    simulation = RobotSimulation(robot, t0=0.0, tf=20.0, dt=Te)
-#    
-#    # reference
-#    referenceState= np.array([[2.] , [1.] ])
-#   
-#    # control gain
-#    kp = 0.4
-#    
-#    for t in simulation.t:
-#        
-#        robot.ctrl = kp* (referenceState - robot.state)
-#        
-#        simulation.addDataFromRobot(robot)
-#    
-#        robot.integrateMotion(Te)
-#
-#    print robot
-#    
-#    simulation.plot(figNo=1)
+# # ---- one robot simulation test
+    
+#     initState = np.array([ [-1.], [2.] ])
+#     robot = Robot.Robot(dynamics='singleIntegrator2D', initState=initState, index=0)    
+    
+#     Te = 0.01
+#     simulation = RobotSimulation(robot, t0=0.0, tf=20.0, dt=Te)
+    
+#     # reference
+#     referenceState= np.array([[2.] , [1.] ])
+  
+#     # control gain
+#     kp = 0.4
+    
+#     for t in simulation.t:
+        
+#         robot.ctrl = kp* (referenceState - robot.state)
+        
+#         simulation.addDataFromRobot(robot)
+    
+#         robot.integrateMotion(Te)
+
+#     print(robot)
+    
+#     simulation.plot(figNo=1)
     
     
     
