@@ -12,16 +12,15 @@ import Graph
 import Simulation
 import matplotlib.pyplot as plt
 
-
+#%%
 stop_simulation = False
-
 def on_key(event):
     global stop_simulation
     if event.key == 'p':
         stop_simulation = True
 
 
-
+#%%
 
 
 # fleet definition
@@ -32,12 +31,18 @@ fleet = Robot.Fleet(nbOfRobots, dynamics='singleIntegrator2D')#, initState=initS
 # random initial positions
 np.random.seed(100)
 for i in range(0, nbOfRobots):
-    fleet.robot[i].state = 10*np.random.rand(2, 1)-5  # random init btw -5, +5
+    fleet.robot[i].state = 20*np.random.rand(2, 1)-10  # random init btw -5, +5
 
 # communication graph
 communicationGraph = Graph.Graph(nbOfRobots)
 # adjacency matrix
-communicationGraph.adjacencyMatrix = np.ones((6,6))
+communicationGraph.adjacencyMatrix = np.eye(6)
+for i in range(1,nbOfRobots):
+    communicationGraph.adjacencyMatrix[i,0]=1
+    communicationGraph.adjacencyMatrix[0,i]=1
+    
+print(communicationGraph.adjacencyMatrix)
+#%%
 
 # np.array([[1, 0, 0, 0, 0, 0],
 #                                                [0, 1, 0, 0, 0, 0],
@@ -47,8 +52,42 @@ communicationGraph.adjacencyMatrix = np.ones((6,6))
 #                                                [0, 0, 0, 0, 0, 1]])
 
 # plot communication graph
-communicationGraph.plot(figNo=1)
 
+max_degree = 4  # 1 liaison vers robot 0 + 2 voisins
+
+for i in range(1, nbOfRobots):
+
+    # calcul des distances
+    liaison = {}
+    for j in range(nbOfRobots):
+        if j != i:
+            dist = np.linalg.norm(fleet.robot[i].state - fleet.robot[j].state)
+            liaison[j] = dist
+
+    # tri par distance
+    liaison_trie = sorted(liaison.items(), key=lambda x: x[1])
+
+    # degré actuel de chaque robot
+    degree = np.sum(communicationGraph.adjacencyMatrix, axis=1)
+
+    # sélection des deux voisins admissibles
+    deux_plus_proche = []
+    for key, dist in liaison_trie:
+        if degree[key] < max_degree:
+            deux_plus_proche.append((key, dist))
+        if len(deux_plus_proche) == 2:
+            break
+
+    # ajout des liaisons symétriques
+    for key, dist in deux_plus_proche:
+        communicationGraph.adjacencyMatrix[i, key] = 1
+        communicationGraph.adjacencyMatrix[key, i] = 1
+
+        
+            
+communicationGraph.plot(figNo=1)
+print(communicationGraph.adjacencyMatrix)
+#%%
 
 # simulation parameters
 Te = 0.01
@@ -60,7 +99,7 @@ kr = 0.2
 reference = np.array([[8.0], [8.0]])
 safe_distance = 2
 kr_avoid = 1.0
-marge = 0.5
+marge = 1
 
 #animation
 plt.ion()  # mode interactif
@@ -81,6 +120,7 @@ for i in range(nbOfRobots-1):
     consigne.append(False)
 
 # main loop of simulation
+
 for t in simulation.t:
     
     if stop_simulation:
@@ -141,6 +181,8 @@ for t in simulation.t:
         x = fleet.robot[i].state[0]
         y = fleet.robot[i].state[1]
         ax.plot(x, y, 'o', markersize=10)
+        ax.text(x + 0.2, y + 0.2, str(i), fontsize=12, color='black')
+
     
     fig.canvas.draw()          # <<< indispensable dans Spyder
     fig.canvas.flush_events()  # <<< indispensable dans Spyder
