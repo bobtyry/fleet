@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 
 #%%
 stop_simulation = False
+colors = ['red', 'blue', 'green', 'orange', 'purple', 'cyan']
 def on_key(event):
     global stop_simulation
     if event.key == 'p':
@@ -31,7 +32,7 @@ fleet = Robot.Fleet(nbOfRobots, dynamics='singleIntegrator2D')#, initState=initS
 # random initial positions
 np.random.seed(100)
 for i in range(0, nbOfRobots):
-    fleet.robot[i].state = 20*np.random.rand(2, 1)-10  # random init btw -5, +5
+    fleet.robot[i].state = 20*np.random.rand(2, 1)-10  # random init btw -10, +10
 
 # communication graph
 communicationGraph = Graph.Graph(nbOfRobots)
@@ -86,20 +87,55 @@ for i in range(1, nbOfRobots):
         
             
 communicationGraph.plot(figNo=1)
-print(communicationGraph.adjacencyMatrix)
-#%%
 
+#%%
+#formation
+decalage = 2
+formation = [
+    np.array([[0],[decalage]]),
+    np.array([[-decalage],[0]]),
+    np.array([[decalage],[0]]),
+    np.array([[0],[-decalage]]),
+    np.array([[0],[-2*decalage]])
+]
+print(formation)
+#%%
+distances = np.zeros((nbOfRobots-1, nbOfRobots-1))
+
+for i in range(1, nbOfRobots):
+    for j in range(nbOfRobots-1):
+        target = fleet.robot[0].state + formation[j]
+        distances[i-1, j] = np.linalg.norm(fleet.robot[i].state - target)
+        
+assigned_points = {}   # robot → point
+dist_copy = distances.copy()
+
+for _ in range(nbOfRobots-1):
+    idx = np.argmin(dist_copy)
+    i_min, j_min = np.unravel_index(idx, dist_copy.shape)
+
+    robot = i_min + 1     # robots 1..5
+    point = j_min         # points 0..4
+
+    assigned_points[robot] = point
+
+    # bloquer ce robot et ce point
+    dist_copy[i_min, :] = np.inf
+    dist_copy[:, j_min] = np.inf
+    
+print(assigned_points)  
+#%%
 # simulation parameters
 Te = 0.01
 simulation = Simulation.FleetSimulation(fleet, t0=0.0, tf=20.0, dt=Te)
 
 # control gain for consensus
-kp = 0.3 #  **** A MODIFIER EN TP ****
-kr = 0.2
-reference = np.array([[8.0], [8.0]])
-safe_distance = 2
+kp = 0 # 
+kr = 0.8
+reference = np.array([[0.0], [8.0]])
+safe_distance = 0.7
 kr_avoid = 1.0
-marge = 1
+marge = 0.2
 
 #animation
 plt.ion()  # mode interactif
@@ -146,9 +182,12 @@ for t in simulation.t:
                         fleet.robot[r].ctrl += kr_avoid * direction / (d + 1e-6)
         
             
+            p = assigned_points[r]
+            target = fleet.robot[0].state + formation[p]
+            fleet.robot[r].ctrl += kr * (target - fleet.robot[r].state)
+
             
-            fleet.robot[r].ctrl += kr * (fleet.robot[0].state - fleet.robot[r].state)
-            if (np.linalg.norm(fleet.robot[0].state - fleet.robot[r].state))<safe_distance + marge:
+            if (np.linalg.norm(fleet.robot[0].state+formation[p] - fleet.robot[r].state))< marge:
                 consigne[r-1] = True
             check= 0
             for i in consigne:
@@ -182,6 +221,23 @@ for t in simulation.t:
         y = fleet.robot[i].state[1]
         ax.plot(x, y, 'o', markersize=10)
         ax.text(x + 0.2, y + 0.2, str(i), fontsize=12, color='black')
+        
+    # --- AFFICHAGE DES POINTS DE FORMATION ASSIGNÉS ---
+    for r in range(1, nbOfRobots):
+        if r in assigned_points:   # sécurité
+            p = assigned_points[r]
+            target = fleet.robot[0].state + formation[p]
+    
+            tx = target[0, 0]
+            ty = target[1, 0]
+    
+            # point cible
+            ax.plot(tx, ty, 'x', markersize=10, color=colors[r])
+    
+            # ligne robot → point cible
+            rx = fleet.robot[r].state[0, 0]
+            ry = fleet.robot[r].state[1, 0]
+            ax.plot([rx, tx], [ry, ty], '--', color=colors[r], alpha=0.5)
 
     
     fig.canvas.draw()          # <<< indispensable dans Spyder
