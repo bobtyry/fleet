@@ -20,6 +20,21 @@ def on_key(event):
     if event.key == 'p':
         stop_simulation = True
 
+#%% Waypoint
+
+class chemin:
+    def __init__(self,point=[],epsilon=1):
+        
+        self.point = point
+        self.epsilon = epsilon
+        self.objectif = []
+    
+    def update(self):
+        
+        objectif = point.pop()
+        
+        
+
 
 #%%
 
