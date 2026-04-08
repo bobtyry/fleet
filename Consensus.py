@@ -24,6 +24,8 @@ def on_key(event):
 #%%
 
 
+
+
 # fleet definition
 nbOfRobots = 6  
 fleet = Robot.Fleet(nbOfRobots, dynamics='singleIntegrator2D')#, initState=initState)    
