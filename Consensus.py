@@ -23,25 +23,45 @@ def on_key(event):
 #%% Waypoint
 
 class chemin:
-    def __init__(self,point=[],epsilon=1):
+    def __init__(self,epsilon=1):
         
-        self.point = point
+        self.point = []
         self.epsilon = epsilon
         self.objectif = []
+        self.flag = True
     
     def update(self):
+        if len(self.point)==0:
+            print("plus de destination")
+        else:
+            if self.flag:
+                self.objectif =self.point.pop(0)
+                self.flag = False
+                
+            
+            
+    def ajouter(self, x,y):
+        self.point.append([x,y])
+    
         
-        objectif = point.pop()
+    def destination(self):
+        if len(self.point)==0:
+            print("plus de destination")
+        else:
+            self.objectif = self.point[0]
+            a= np.array(self.objectif)
+            b = a.reshape(len(a),1)
+            return b
+    def afficher(self):
+        for i in self.point:
+            print(i)
         
-        
-
-
-#%%
 
 
 
 
-# fleet definition
+
+#%% fleet definition
 nbOfRobots = 6  
 fleet = Robot.Fleet(nbOfRobots, dynamics='singleIntegrator2D')#, initState=initState)    
 
@@ -148,7 +168,7 @@ simulation = Simulation.FleetSimulation(fleet, t0=0.0, tf=20.0, dt=Te)
 
 # control gain for consensus
 kp = 0 # 
-kr = 0.8
+kr = 0.3
 reference = np.array([[0.0], [8.0]])
 safe_distance = 0.7
 kr_avoid = 1.0
@@ -169,6 +189,11 @@ Etape_f = False
 #consigne
 consigne = []
 check = 0
+
+waypoint = chemin(epsilon=0.8)
+waypoint.ajouter(0, 8)
+waypoint.ajouter(4, -5)
+
 for i in range(nbOfRobots-1):
     consigne.append(False)
 
@@ -217,10 +242,23 @@ for t in simulation.t:
     if etape_2:
         
         fleet.robot[0].ctrl = np.zeros((2,1))
-        fleet.robot[0].ctrl += kr * (reference - fleet.robot[0].state)    
+        fleet.robot[0].ctrl += kr * (waypoint.destination() - fleet.robot[0].state)    
+        
+        if np.linalg.norm(fleet.robot[0].state-waypoint.destination())<waypoint.epsilon:
+            waypoint.update()
+            
+        if (np.linalg.norm(fleet.robot[0].state-waypoint.destination())>waypoint.epsilon) and not waypoint.flag:
+            waypoint.flag = True
+            
         
         for r in range(1, fleet.nbOfRobots):
-            fleet.robot[r].ctrl = fleet.robot[0].ctrl
+            
+            p = assigned_points[r]
+            target = fleet.robot[0].state + formation[p]
+            fleet.robot[r].ctrl += kr * (target - fleet.robot[r].state)
+            
+        if (np.linalg.norm(fleet.robot[0].state-waypoint.objectif))<waypoint.epsilon :
+            waypoint.update()
             
 
     # store simulation data
